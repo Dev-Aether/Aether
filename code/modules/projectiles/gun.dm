@@ -89,6 +89,13 @@
 	var/list/firemodes = list()
 	var/selector_sound = 'sound/weapons/guns/selector.ogg'
 
+	//attachments
+	var/list/attachments = list()	//List of all current attachments on the gun.
+	var/list/attachable_allowed = list()
+	var/attachable_overlays[] = null	//List. Current attachment overlays to be applied.
+	var/attachable_offset[] = null	//List. Offset to allign with sprite
+	var/list/starting_attachment_types = list()	//What attachments this gun starts with.
+
 	//aiming system stuff
 	var/keep_aim = 1 	//1 for keep shooting until aim is lowered
 						//0 for one bullet after tarrget moves and aim is lowered
@@ -118,6 +125,10 @@
 	if(scope_zoom)
 		verbs += /obj/item/gun/proc/scope
 
+	attachable_overlays = list("muzzle" = null, "rail" = null, "under" = null, "stock" = null, "mag" = null)
+	set_gun_attachment_offset()
+	handle_starting_attachment()
+
 /obj/item/gun/update_twohanding()
 	if(one_hand_penalty)
 		update_icon() // In case item_state is set somewhere else.
@@ -125,7 +136,7 @@
 
 /obj/item/gun/on_update_icon()
 	var/mob/living/M = loc
-	overlays.Cut()
+	overlays -= image(icon,"[safety_icon][safety()]")
 	if(istype(M))
 		if(wielded_item_state)
 			if(M.can_wield_item(src) && src.is_held_twohanded(M))
@@ -650,3 +661,79 @@
 			var/picked = pick(targets)
 			afterattack(picked, user)
 			return 1
+
+/obj/item/gun/attackby(var/obj/item/A as obj, mob/user as mob)
+	if(istype(A, /obj/item/attachable))
+		attach_to_gun(user, A)
+	..()
+
+/obj/item/gun/proc/set_gun_attachment_offset()
+	attachable_offset = null
+
+/obj/item/gun/proc/handle_starting_attachment()
+	set waitfor = 0
+	sleep(1)
+	if(starting_attachment_types && starting_attachment_types.len)
+		for(var/path in starting_attachment_types)
+			var/obj/item/attachable/A = new path(src)
+			A.Attach(src)
+			update_attachable(A.slot)
+
+/obj/item/gun/verb/field_Strip()
+	set src in usr
+	set category = "Object"
+	set name = "Field-Strip"
+	if(usr == loc)
+		field_strip(usr)
+
+
+/obj/item/gun/proc/field_strip(mob/living/user)
+	if(!istype(user))
+		return
+
+	if(!istype(user.get_active_hand(), src))
+		return
+
+	if(zoom)
+		to_chat(user, SPAN_WARNING("You cannot do that while looking down \the [src]'s scope!"))
+		return
+
+	var/list/possible_attachments = list()
+	for(var/slot in attachments)
+		var/obj/item/attachable/R = attachments[slot]
+		if(R && (R.flags_attach_features & ATTACH_REMOVABLE))
+			possible_attachments += R
+
+	if(!possible_attachments.len)
+		to_chat(user, SPAN_WARNING("[src] has no removable attachments."))
+		return
+
+	var/obj/item/attachable/A
+	if(possible_attachments.len == 1)
+		A = possible_attachments[1]
+	else
+		A = input("Which attachment to remove?") as null|anything in possible_attachments
+
+	if(!A || user.get_active_hand() != src || zoom || (!(A == attachments[A.slot])) || !(A.flags_attach_features & ATTACH_REMOVABLE))
+		return
+
+	user.visible_message(SPAN_NOTICE("[user] begins removing [A] from [src]."),
+	SPAN_NOTICE("You begin removing [A] from [src]."), null, 4)
+
+	if(!do_after(user, 35))
+		return
+
+	if(!(A == attachments[A.slot]))
+		return
+	if(!(A.flags_attach_features & ATTACH_REMOVABLE))
+		return
+
+	if(zoom)
+		return
+
+	user.visible_message(SPAN_NOTICE("[user] strips [A] from [src]."),
+	SPAN_NOTICE("You strip [A] from [src]."), null, 4)
+	A.Detach(src, user)
+
+	//playsound(src, [SOUND PENDING], 25)
+	update_icon()
