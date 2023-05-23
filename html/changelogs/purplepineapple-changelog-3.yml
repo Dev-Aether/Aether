@@ -1,0 +1,7 @@
+author: PurplePineapple
+
+delete-after: True
+
+changes:
+  - rscadd: "Added a weapon attachment system for modular firearms."
+  - rscadd: "Temporary icons for attachment testing from CM-SS13."
