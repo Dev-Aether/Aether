@@ -234,6 +234,11 @@
 /datum/action/item_action/organ/augment
 	button_icon = 'icons/obj/augment.dmi'
 
+/datum/action/item_action/toggle/New(Target)
+	..()
+	name = "Toggle [target]"
+	button.name = name
+
 #undef AB_WEST_OFFSET
 #undef AB_NORTH_OFFSET
 #undef AB_MAX_COLUMNS

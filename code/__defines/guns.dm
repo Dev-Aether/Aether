@@ -23,6 +23,11 @@
 #define SPEEDLOADER 	2	//Transfers casings from the mag to the gun when used.
 #define MAGAZINE 		4	//The magazine item itself goes inside the gun
 
+#define ATTACH_REMOVABLE	1 //This attachment can be removed.
+#define ATTACH_ACTIVATION	2 //This attachment has a toggleable activation. Scopes. Switching to underbarrel weapon.
+#define ATTACH_PROJECTILE	4 //This attachment fires a projectile
+#define ATTACH_RELOADABLE	8 //You can reload this attachment
+#define ATTACH_MELEE        16 //This attachment should activate if you attack() with it attached. Bayonets.
 
 #define GUN_BULK_LIGHT_RIFLE 4
 #define GUN_BULK_RIFLE  5
